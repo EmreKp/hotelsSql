@@ -9,88 +9,100 @@ import com.example.sqlvericek.Model.Msg;
 import com.example.sqlvericek.Model.Result;
 import com.example.sqlvericek.Model.Room;
 import com.example.sqlvericek.Model.Success;
+import com.example.sqlvericek.Repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class RoomService {
-    private JdbcTemplate jdbcTemp;
 
     @Autowired
-    public RoomService(JdbcTemplate jdbcTemp) {
-        this.jdbcTemp = jdbcTemp;
-    }
+    RoomRepository roomRepository;
+
+    boolean error=false;
 
     public List<Result> getRooms(String checkIn, String checkOut, int pax) {
-        List<Result> rsList=new ArrayList<>();
-        List<Result> other=new ArrayList<>();
+        List<Result> resultList=new ArrayList<>();
+        List<Result> otherList=new ArrayList<>();
         //fetch dates from params
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Date dIn = new Date();
-        Date dOut = dIn;
+        Date checkInDate;
+        Date checkOutDate;
         try {
-            dIn = df.parse(checkIn);
-            dOut = df.parse(checkOut);
+            checkInDate = df.parse(checkIn);
+            checkOutDate = df.parse(checkOut);
         } catch (ParseException ex) {
             Result err = new Msg("Dates must be formatted in YYYY-MM-DD");
-            other.add(err);
-            return other;
+            this.error=true;
+            otherList.add(err);
+            return otherList;
         }
         //it gives zero prices if dates are equal or in after out
-        if (dIn.after(dOut) || dIn.equals(dOut))
-            return rsList;
-        List<Room> roomList = new ArrayList<Room>();
-        roomList.addAll(jdbcTemp.query("SELECT * FROM tabalo",
-                (rs, rowNum) -> new Room(rs.getString("room_code"), rs.getInt("allotment"),
-                        rs.getFloat("price"), rs.getString("date"), rs.getFloat("discount"), rs.getInt("max_pax")))
-                );
+        if (checkInDate.after(checkOutDate) || checkInDate.equals(checkOutDate)) {
+            Result err=new Msg("The checkout date is not after checkin date.");
+            this.error=true;
+            otherList.add(err);
+            return otherList;
+        }
+
+        // Databaseden allotment >0 and max_pax <= pax, and date between checkIn and checkout -1
+        // Room code'a göre grupla (hash map)
+        // hash map'i gez, count < checkout - checkin (gün sayısı, gece sayısı) küçük olanları ele
+        // elimizde sadece uygun odalar kalmış olacak.
+        // hash map'i tekrar gez, fiyatlamaları uygula, result'ı dön
+
+        List<Room> roomList = roomRepository.findAllRooms(checkInDate,checkOutDate,pax);
         //group all by map
-        Map<String, List<Room>> rsMap = new HashMap<>();
+        Map<String, List<Room>> resultMap = new HashMap<>();
         for (Room room : roomList) {
             //check if key exists
-            if (rsMap.containsKey(room.getCode())) {
-                rsMap.get(room.getCode()).add(room);
+            if (resultMap.containsKey(room.getCode())) {
+                resultMap.get(room.getCode()).add(room);
             } else {
                 List<Room> list = new ArrayList<>();
                 list.add(room);
-                rsMap.put(room.getCode(), list);
+                resultMap.put(room.getCode(), list);
             }
         }
+
+        //iterate map
+        for (Iterator<Map.Entry<String,List<Room>>> it=resultMap.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<String,List<Room>> entry=it.next();
+            List<Room> list=entry.getValue();
+            long listCount=list.size(); //check if dates between in and out are full
+            long checkInTime=checkInDate.getTime();
+            long checkOutTime=checkOutDate.getTime();
+            long plannedDays=(checkOutTime-checkInTime)/1000/60/60/24;
+            if (listCount<plannedDays) {
+                it.remove();
+            }
+        }
+
         //calculate total price and return the list
-        for (Map.Entry<String, List<Room>> entry : rsMap.entrySet()) {
-            float total = 0;
+        for (Map.Entry<String, List<Room>> entry : resultMap.entrySet()) {
+            Float total = 0.0f;
             List<Room> list = entry.getValue();
             for (Room room : list) {
-                Date date = room.getDate();
                 float price = room.getPrice();
-                float discount = room.getDiscount();
-                if ((date.equals(dIn) || date.after(dIn)) && date.before(dOut)) {
-                    if (room.getAllotment() == 0 || room.getMaxPax() < pax) {
-                        total = -1;
-                        break;
-                    }
-                    if (discount != 0) price -= price * discount / 100;
-                    total += price;
+                Float discount = room.getDiscount();
+                if (discount != null) {
+                    price -= price * discount / 100;
                 }
+                total += price;
             }
-            //find if last date is before than expected
-            list.sort(Comparator.comparing(Room::getDate));
-            //lastly check first & last dates are equal
-            Date firstDate = list.get(0).getDate();
-            Date lastDate = list.get(entry.getValue().size() - 1).getDate();
-            if (firstDate.after(dIn) || lastDate.before(dOut))
-                total = -1;
             Result result = new Success(entry.getKey(), total);
-            if (total != -1)
-                rsList.add(result);
+            resultList.add(result);
         }
-        if (rsList.isEmpty()) {
+
+        if (resultList.isEmpty()) {
             Result msg = new Msg("Rooms not found");
-            other.add(msg);
-            return other;
+            otherList.add(msg);
+            return otherList;
         }
-        return rsList;
+        return resultList;
+    }
+
+    public boolean getError(){
+        return error;
     }
 }

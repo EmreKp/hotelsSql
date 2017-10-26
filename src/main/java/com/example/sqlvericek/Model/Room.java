@@ -4,21 +4,20 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 @Entity
 @Table
 public class Room {
     @Id
     @GeneratedValue
-    private int ID;
+    private Integer ID;
 
     private String room_code;
     private int allotment,max_pax;
-    private float price,discount;
+    private float price;
+
+    private Float discount;
     private Date date;
 
     protected Room(){}
@@ -28,12 +27,14 @@ public class Room {
         this.allotment=allot;
         this.price=fiyat;
         DateFormat df=new SimpleDateFormat("yyyy-MM-dd");
+        Date date=new Date();
         try {
-            this.date=df.parse(tarih);
+            date=df.parse(tarih);
         }
         catch (ParseException ex){
 
         }
+        this.date=date;
         this.discount=disco;
         this.max_pax=pax;
     }
@@ -53,7 +54,7 @@ public class Room {
     public float getPrice(){
         return price;
     }
-    public float getDiscount(){
+    public Float getDiscount(){
         return discount;
     }
 }

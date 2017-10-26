@@ -5,9 +5,13 @@ import java.util.*;
 import com.example.sqlvericek.Model.*;
 import com.example.sqlvericek.Service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.xml.ws.Response;
 
 @RestController
 public class MainController {
@@ -19,7 +23,17 @@ public class MainController {
     }
 
     @RequestMapping(value = "/hotels", produces = "application/json")
-    public List<Result> hotelList(@RequestParam("checkIn") String checkIn, @RequestParam("checkOut") String checkOut, @RequestParam("pax") int pax) {
-        return this.roomService.getRooms(checkIn, checkOut, pax);
+    public ResponseEntity<List<Result>> hotelList(
+            @RequestParam("checkIn") String checkIn,
+            @RequestParam("checkOut") String checkOut,
+            @RequestParam("pax") int pax
+    ) {
+        List<Result> list=this.roomService.getRooms(checkIn, checkOut, pax);
+        boolean error=this.roomService.getError();
+        HttpStatus httpStatus=HttpStatus.OK;
+        if (error==true) {
+            httpStatus=HttpStatus.BAD_REQUEST;
+        }
+        return new ResponseEntity<>(list,httpStatus);
     }
 }
