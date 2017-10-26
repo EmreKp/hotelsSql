@@ -10,6 +10,7 @@ import com.example.sqlvericek.Model.Result;
 import com.example.sqlvericek.Model.Room;
 import com.example.sqlvericek.Model.Success;
 import com.example.sqlvericek.Repository.RoomRepository;
+import com.example.sqlvericek.Validator.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,37 +20,24 @@ public class RoomService {
     @Autowired
     RoomRepository roomRepository;
 
-    boolean error=false;
+    int status;
+
+    private Validator validator;
+
+    //
+    public RoomService(Validator validator){
+        this.validator = validator;
+    }
 
     public List<Result> getRooms(String checkIn, String checkOut, int pax) {
         List<Result> resultList=new ArrayList<>();
         List<Result> otherList=new ArrayList<>();
+        int status;
         //fetch dates from params
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Date checkInDate;
-        Date checkOutDate;
-        try {
-            checkInDate = df.parse(checkIn);
-            checkOutDate = df.parse(checkOut);
-        } catch (ParseException ex) {
-            Result err = new Msg("Dates must be formatted in YYYY-MM-DD");
-            this.error=true;
-            otherList.add(err);
-            return otherList;
-        }
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        List<Date> dateValidate = validator.dateValidator(checkIn, checkOut);
         //it gives zero prices if dates are equal or in after out
-        if (checkInDate.after(checkOutDate) || checkInDate.equals(checkOutDate)) {
-            Result err=new Msg("The checkout date is not after checkin date.");
-            this.error=true;
-            otherList.add(err);
-            return otherList;
-        }
 
-        // Databaseden allotment >0 and max_pax <= pax, and date between checkIn and checkout -1
-        // Room code'a göre grupla (hash map)
-        // hash map'i gez, count < checkout - checkin (gün sayısı, gece sayısı) küçük olanları ele
-        // elimizde sadece uygun odalar kalmış olacak.
-        // hash map'i tekrar gez, fiyatlamaları uygula, result'ı dön
 
         List<Room> roomList = roomRepository.findAllRooms(checkInDate,checkOutDate,pax);
         //group all by map
@@ -96,13 +84,15 @@ public class RoomService {
 
         if (resultList.isEmpty()) {
             Result msg = new Msg("Rooms not found");
+            status=200;
             otherList.add(msg);
             return otherList;
         }
+        status=200;
         return resultList;
     }
 
-    public boolean getError(){
-        return error;
+    public int getStatus(){
+        return status;
     }
 }

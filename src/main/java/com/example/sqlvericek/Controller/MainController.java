@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.xml.ws.Response;
-
 @RestController
 public class MainController {
     private RoomService roomService;
@@ -29,11 +27,7 @@ public class MainController {
             @RequestParam("pax") int pax
     ) {
         List<Result> list=this.roomService.getRooms(checkIn, checkOut, pax);
-        boolean error=this.roomService.getError();
-        HttpStatus httpStatus=HttpStatus.OK;
-        if (error==true) {
-            httpStatus=HttpStatus.BAD_REQUEST;
-        }
-        return new ResponseEntity<>(list,httpStatus);
+        int status=this.roomService.getStatus();
+        return ResponseEntity.status(status).body(list);
     }
 }

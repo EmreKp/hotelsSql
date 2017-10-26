@@ -26,10 +26,10 @@ public class Room {
         this.room_code=code;
         this.allotment=allot;
         this.price=fiyat;
-        DateFormat df=new SimpleDateFormat("yyyy-MM-dd");
+        DateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd");
         Date date=new Date();
         try {
-            date=df.parse(tarih);
+            date=dateFormat.parse(tarih);
         }
         catch (ParseException ex){
 
