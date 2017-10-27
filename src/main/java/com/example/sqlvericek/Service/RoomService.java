@@ -1,5 +1,7 @@
 package com.example.sqlvericek.Service;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.example.sqlvericek.Model.Msg;
@@ -30,17 +32,19 @@ public class RoomService {
     public List<Result> getRooms(String checkIn, String checkOut, int pax) {
         List<Result> resultList=new ArrayList<>();
         List<Result> otherList=new ArrayList<>();
-        List<Date> dateList=new ArrayList<>();
+        Date checkInDate=new Date();
+        Date checkOutDate=new Date();
+        DateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd");
         try {
-            dateList=validator.validate(checkIn,checkOut);
+            checkInDate=dateFormat.parse(checkIn);
+            checkOutDate=dateFormat.parse(checkOut);
+            validator.validate(checkInDate,checkOutDate,pax);
         } catch (Exception ex) {
             Result err=new Msg(ex.getMessage());
             status=400;
             otherList.add(err);
             return otherList;
         }
-        Date checkInDate=dateList.get(0);
-        Date checkOutDate=dateList.get(1);
         List<Room> roomList = roomRepository.findAllRooms(checkInDate,checkOutDate,pax);
         //group all by map
         Map<String, List<Room>> resultMap = new HashMap<>();

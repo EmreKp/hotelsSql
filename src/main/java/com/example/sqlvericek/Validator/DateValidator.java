@@ -15,24 +15,15 @@ public class DateValidator {
     private String message;
 
 
-    public List<Date> validate(String checkIn, String checkOut) throws Exception {
-        List<Date> dateList=new ArrayList<>();
-        Date checkInDate=new Date();
-        Date checkOutDate=new Date();
-        DateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            checkInDate = dateFormat.parse(checkIn);
-            checkOutDate = dateFormat.parse(checkOut);
-        } catch (ParseException ex) {
-            throw new Exception("Dates must be formatted in YYYY-MM-DD");
+    public void validate(Date checkIn, Date checkOut, int pax) throws Exception {
+        if(pax<1) {
+            throw new Exception("Pax must be greater than zero");
         }
-        long checkInTime=checkInDate.getTime();
-        long checkOutTime=checkOutDate.getTime();
+        List<Date> dateList=new ArrayList<>();
+        long checkInTime=checkIn.getTime();
+        long checkOutTime=checkOut.getTime();
         if(checkInTime>=checkOutTime) {
             throw new Exception("The checkout date must be after checkin.");
         }
-        dateList.add(checkInDate);
-        dateList.add(checkOutDate);
-        return dateList;
     }
 }
