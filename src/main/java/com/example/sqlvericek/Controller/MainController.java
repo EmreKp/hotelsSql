@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import com.example.sqlvericek.Error.DateParseError.DateParseError;
 import com.example.sqlvericek.Error.ErrorsTypeModel.ErrorType;
 import com.example.sqlvericek.Error.ErrorsTypeModel.ErrorsType;
 import com.example.sqlvericek.Error.PaxError.ZeroPaxError;
@@ -18,8 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.xml.validation.Validator;
 
 @RestController
 public class MainController {
@@ -67,6 +66,13 @@ public class MainController {
         ZeroPaxError zeroPaxError=new ZeroPaxError();
         zeroPaxError.setErrors(responseErrorsType(zpex.getMessage()));
         return ResponseEntity.status(400).body(zeroPaxError);
+    }
+
+    @ExceptionHandler(ParseException.class)
+    public ResponseEntity<DateParseError> handleDateParseError(ParseException pex){
+        DateParseError dateParseError=new DateParseError();
+        dateParseError.setErrors(responseErrorsType(pex.getMessage()));
+        return ResponseEntity.status(400).body(dateParseError);
     }
 
     private ErrorsType responseErrorsType(String message){
