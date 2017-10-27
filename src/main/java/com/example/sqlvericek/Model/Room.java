@@ -22,19 +22,12 @@ public class Room {
 
     protected Room(){}
 
-    public Room(String code, int allot, float fiyat, String tarih, float disco, int pax){
+    public Room(String code, int allot, float fiyat, String date, float disco, int pax) throws ParseException {
         this.room_code=code;
         this.allotment=allot;
         this.price=fiyat;
         DateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd");
-        Date date=new Date();
-        try {
-            date=dateFormat.parse(tarih);
-        }
-        catch (ParseException ex){
-
-        }
-        this.date=date;
+        this.date=dateFormat.parse(date);
         this.discount=disco;
         this.max_pax=pax;
     }

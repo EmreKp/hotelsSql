@@ -1,8 +1,5 @@
 package com.example.sqlvericek.Validator;
 
-import com.example.sqlvericek.Model.Msg;
-import com.example.sqlvericek.Model.Result;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
@@ -13,22 +10,29 @@ import java.util.Date;
 import java.util.List;
 
 @Component
-public class Validator {
+public class DateValidator {
+    private boolean error;
+    private String message;
 
-    public List<Date> dateValidator(String checkIn, String checkOut){
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+    public List<Date> validate(String checkIn, String checkOut) throws Exception {
+        List<Date> dateList=new ArrayList<>();
         Date checkInDate=new Date();
         Date checkOutDate=new Date();
-        String errMsg;
-        List<Date> dateList=new ArrayList<>();
+        DateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd");
         try {
             checkInDate = dateFormat.parse(checkIn);
             checkOutDate = dateFormat.parse(checkOut);
-
         } catch (ParseException ex) {
-            errMsg="Dates must be formatted in YYYY-MM-DD";
+            throw new Exception("Dates must be formatted in YYYY-MM-DD");
+        }
+        long checkInTime=checkInDate.getTime();
+        long checkOutTime=checkOutDate.getTime();
+        if(checkInTime>=checkOutTime) {
+            throw new Exception("The checkout date must be after checkin.");
         }
         dateList.add(checkInDate);
         dateList.add(checkOutDate);
         return dateList;
+    }
 }

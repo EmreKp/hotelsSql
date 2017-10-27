@@ -1,8 +1,5 @@
 package com.example.sqlvericek.Service;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.example.sqlvericek.Model.Msg;
@@ -10,7 +7,7 @@ import com.example.sqlvericek.Model.Result;
 import com.example.sqlvericek.Model.Room;
 import com.example.sqlvericek.Model.Success;
 import com.example.sqlvericek.Repository.RoomRepository;
-import com.example.sqlvericek.Validator.Validator;
+import com.example.sqlvericek.Validator.DateValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,23 +19,28 @@ public class RoomService {
 
     int status;
 
-    private Validator validator;
+    @Autowired
+    private DateValidator validator;
 
-    //
-    public RoomService(Validator validator){
+    @Autowired
+    public RoomService(DateValidator validator){
         this.validator = validator;
     }
 
     public List<Result> getRooms(String checkIn, String checkOut, int pax) {
         List<Result> resultList=new ArrayList<>();
         List<Result> otherList=new ArrayList<>();
-        int status;
-        //fetch dates from params
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        List<Date> dateValidate = validator.dateValidator(checkIn, checkOut);
-        //it gives zero prices if dates are equal or in after out
-
-
+        List<Date> dateList=new ArrayList<>();
+        try {
+            dateList=validator.validate(checkIn,checkOut);
+        } catch (Exception ex) {
+            Result err=new Msg(ex.getMessage());
+            status=400;
+            otherList.add(err);
+            return otherList;
+        }
+        Date checkInDate=dateList.get(0);
+        Date checkOutDate=dateList.get(1);
         List<Room> roomList = roomRepository.findAllRooms(checkInDate,checkOutDate,pax);
         //group all by map
         Map<String, List<Room>> resultMap = new HashMap<>();
@@ -95,4 +97,5 @@ public class RoomService {
     public int getStatus(){
         return status;
     }
+
 }
