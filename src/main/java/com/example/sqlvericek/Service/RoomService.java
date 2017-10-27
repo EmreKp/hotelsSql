@@ -29,23 +29,10 @@ public class RoomService {
         this.validator = validator;
     }
 
-    public List<Result> getRooms(String checkIn, String checkOut, int pax) {
+    public List<Result> getRooms(Date checkIn, Date checkOut, int pax) {
         List<Result> resultList=new ArrayList<>();
         List<Result> otherList=new ArrayList<>();
-        Date checkInDate=new Date();
-        Date checkOutDate=new Date();
-        DateFormat dateFormat=new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            checkInDate=dateFormat.parse(checkIn);
-            checkOutDate=dateFormat.parse(checkOut);
-            validator.validate(checkInDate,checkOutDate,pax);
-        } catch (Exception ex) {
-            Result err=new Msg(ex.getMessage());
-            status=400;
-            otherList.add(err);
-            return otherList;
-        }
-        List<Room> roomList = roomRepository.findAllRooms(checkInDate,checkOutDate,pax);
+        List<Room> roomList = roomRepository.findAllRooms(checkIn,checkOut,pax);
         //group all by map
         Map<String, List<Room>> resultMap = new HashMap<>();
         for (Room room : roomList) {
@@ -64,8 +51,8 @@ public class RoomService {
             Map.Entry<String,List<Room>> entry=it.next();
             List<Room> list=entry.getValue();
             long listCount=list.size(); //check if dates between in and out are full
-            long checkInTime=checkInDate.getTime();
-            long checkOutTime=checkOutDate.getTime();
+            long checkInTime=checkIn.getTime();
+            long checkOutTime=checkOut.getTime();
             long plannedDays=(checkOutTime-checkInTime)/1000/60/60/24;
             if (listCount<plannedDays) {
                 it.remove();
